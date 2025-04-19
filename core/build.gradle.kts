@@ -1,8 +1,6 @@
+import android.databinding.tool.ext.capitalizeUS
 import com.github.kr328.golang.GolangBuildTask
 import com.github.kr328.golang.GolangPlugin
-import java.io.FileOutputStream
-import java.net.URL
-import java.time.Duration
 
 plugins {
     kotlin("android")
@@ -61,5 +59,20 @@ dependencies {
 afterEvaluate {
     tasks.withType(GolangBuildTask::class.java).forEach {
         it.inputs.dir(golangSource)
+    }
+}
+
+val abis = listOf("arm64-v8a" to "Arm64V8a", "armeabi-v7a" to "ArmeabiV7a", "x86" to "X86", "x86_64" to "X8664")
+
+androidComponents.onVariants { variant ->
+    val cmakeName = if (variant.buildType == "debug") "Debug" else "RelWithDebInfo"
+
+    abis.forEach { (abi, goAbi) ->
+        tasks.configureEach {
+            if (name.startsWith("buildCMake$cmakeName[$abi]")) {
+                dependsOn("externalGolangBuild${variant.name.capitalizeUS()}$goAbi")
+                println("Set up dependency: $name -> externalGolangBuild${variant.name.capitalizeUS()}$goAbi")
+            }
+        }
     }
 }

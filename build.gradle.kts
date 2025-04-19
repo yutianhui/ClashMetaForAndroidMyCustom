@@ -32,19 +32,29 @@ subprojects {
     apply(plugin = if (isApp) "com.android.application" else "com.android.library")
 
     extensions.configure<BaseExtension> {
+        buildFeatures.buildConfig = true
         defaultConfig {
             if (isApp) {
                 applicationId = "com.github.metacubex.clash"
             }
 
-            minSdk = 21
-            targetSdk = 31
+            project.name.let { name ->
+                namespace = if (name == "app") "com.github.kr328.clash"
+                else "com.github.kr328.clash.$name"
+            }
 
-            versionName = "2.11.3.mod-dns"
-            versionCode = 211003
+            minSdk = 21
+            targetSdk = 35
+
+            versionName = "2.11.8"
+            versionCode = 211008
 
             resValue("string", "release_name", "v$versionName")
             resValue("integer", "release_code", "$versionCode")
+
+            ndk {
+                abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86", "x86_64")
+            }
 
             externalNativeBuild {
                 cmake {
@@ -59,7 +69,7 @@ subprojects {
             }
         }
 
-        ndkVersion = "23.0.7599858"
+        ndkVersion = "27.2.12479018"
 
         compileSdkVersion(defaultConfig.targetSdk!!)
 
@@ -134,7 +144,7 @@ subprojects {
             named("release") {
                 isMinifyEnabled = isApp
                 isShrinkResources = isApp
-                signingConfig = signingConfigs.findByName("release")
+                signingConfig = signingConfigs.findByName("release") ?: signingConfigs["debug"]
                 proguardFiles(
                     getDefaultProguardFile("proguard-android-optimize.txt"),
                     "proguard-rules.pro"
@@ -158,8 +168,15 @@ subprojects {
                 abi {
                     isEnable = true
                     isUniversalApk = true
+                    reset()
+                    include("arm64-v8a", "armeabi-v7a", "x86", "x86_64")
                 }
             }
+        }
+
+        compileOptions {
+            sourceCompatibility = JavaVersion.VERSION_21
+            targetCompatibility = JavaVersion.VERSION_21
         }
     }
 }
